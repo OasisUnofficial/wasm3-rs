@@ -499,7 +499,7 @@ impl<'env, 'rt, C> Instance<'env, 'rt, C> {
             // Execute function.
             let userdata = (*ctx).userdata;
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                (&mut *userdata.cast::<F>())(context, args)
+                (*userdata.cast::<F>())(context, args)
             }))
             .unwrap_or(Err(Trap::Abort));
             let ret = match result {
@@ -718,11 +718,11 @@ impl Arg for Tuple {
         for_tuples!( #( Tuple.push_values(values); )* );
     }
 
-    #[allow(clippy::eval_order_dependence)]
+    #[allow(clippy::mixed_read_write_in_expression)]
     fn from_stack(mut sp: &[u64]) -> Result<Self, Error> {
         let mut index = 0;
 
-        let result = for_tuples!( ( #( {
+        Ok(for_tuples!( ( #( {
             if sp.len() < index + 1 {
                 return Err(Error::ArgumentCountMismatch);
             }
@@ -731,9 +731,7 @@ impl Arg for Tuple {
             index += Tuple::count();
 
             item
-        } ),* ) );
-
-        Ok(result)
+        } ),* ) ))
     }
 
     fn to_stack(&self, sp: &mut [u64]) -> Result<(), Error> {
