@@ -26,24 +26,10 @@ jobs:
           submodules: true
 
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          components: rustfmt # rustfmt is required for macros tests.
+        run: rustup show
 
-      - name: Unit tests with coverage
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          version: '0.18.0'
-          args: '--avoid-cfg-tarpaulin -- --test-threads 1'
-
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v1.5.2
-
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: code-coverage-report
-          path: cobertura.xml
+      - name: Test
+        run: cargo test --all-features
 
   test-rust-sgx:
     # NOTE: This name appears in GitHub's Checks API.
@@ -51,25 +37,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc-multilib
+          sudo apt-get install gcc-multilib clang-11
 
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          components: rustfmt # rustfmt is required for macros tests.
-          target: x86_64-fortanix-unknown-sgx
-          override: true
+        run: rustup show
 
       - name: Build for SGX
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --target x86_64-fortanix-unknown-sgx
+        run: cargo build --target x86_64-fortanix-unknown-sgx
+        env:
+          CFLAGS_x86_64_fortanix_unknown_sgx: -isystem/usr/include/x86_64-linux-gnu -mlvi-hardening -mllvm -x86-experimental-lvi-inline-asm-hardening
+          CC_x86_64_fortanix_unknown_sgx: clang-11

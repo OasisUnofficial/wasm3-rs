@@ -376,7 +376,7 @@ impl<'m> Memory<'m> {
     /// calls due to reallocations.
     unsafe fn from_runtime<'a>(rt: *const ffi::M3Runtime) -> Memory<'a> {
         let header = (*rt).memory.mallocated;
-        let len = (*header).length as usize;
+        let len = (*header).length;
         let data = if len == 0 {
             NonNull::dangling().as_ptr()
         } else {
